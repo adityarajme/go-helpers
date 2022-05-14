@@ -2,14 +2,14 @@ package golang_helpers
 
 import (
 	"database/sql"
-	"time"
 	"log"
+	"time"
 )
 
 var DbConn *sql.DB
 
 /**
-	Function to Open a Connection Pool
+Function to Open a Connection Pool
 */
 func DbOpenConn() (*sql.DB, error) {
 	connstr := "db_username:db_password@tcp(db_server:3306)/db_name?charset=utf8"
@@ -17,15 +17,15 @@ func DbOpenConn() (*sql.DB, error) {
 	CheckErr(err)
 
 	/*
-	We may or may not use these settings but these setting helped in fixing two MySQL related bugs I faced while development
-	- Too Many Connections
-	- Aborted Connection
+		We may or may not use these settings but these setting helped in fixing two MySQL related bugs I faced while development
+		- Too Many Connections
+		- Aborted Connection
 	*/
-	//No Idle connection
-	DbConn.SetMaxIdleConns(0)
+	//10 Idle connection
+	DbConn.SetMaxIdleConns(10)
 
 	//Should be higher for production code. But also change the same in MySQL settings (/etc/mysql/my.cnf)
-	DbConn.SetMaxOpenConns(100)
+	DbConn.SetMaxOpenConns(150)
 
 	//Connection dies after 5 secs
 	DbConn.SetConnMaxLifetime(time.Second * 5)
@@ -34,7 +34,7 @@ func DbOpenConn() (*sql.DB, error) {
 }
 
 //In case the Connection died, create a new connection
-func FixConn() (*sql.DB) {
+func FixConn() *sql.DB {
 	checkping := DbConn.Ping()
 
 	var err error
@@ -181,7 +181,7 @@ func SelectExample() {
 	id := "10"
 	sel_db, err := DbQueryGetRowsParams(db, "SELECT name, age FROM mytable where id=?", id)
 	CheckErr(err)
-	defer sel_db.Close()
+	sel_db.Close() //could use defer but I want to close it before the function ends
 
 	for sel_db.Next() {
 		var age int
@@ -208,7 +208,7 @@ func UpdateExample() {
 	name := "My Name"
 	age := "20"
 	id := "1"
-	_, err := DbUpdate(db, "update alp_sets set name=?, age=? where id = ?",  name, age, id)
+	_, err := DbUpdate(db, "update mytable set name=?, age=? where id = ?", name, age, id)
 	CheckErr(err)
 }
 
